@@ -72,3 +72,4 @@ echo json_encode([
         'answer' => $answer
     ]
 ]);
+exit;

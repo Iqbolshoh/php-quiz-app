@@ -87,11 +87,11 @@
 
             removeBtn.addEventListener('click', () => {
                 // Don't allow removing if there are only 3 options
-                if (optionsContainer.querySelectorAll('.option-group').length > 3) {
+                if (optionsContainer.querySelectorAll('.option-group').length > 2) {
                     optionGroup.remove();
                     updateOptionNumbers();
                 } else {
-                    alert("Kamida 3 ta variant bo'lishi shart!");
+                    alert("Kamida 2 ta variant bo'lishi shart!");
                 }
             });
 
@@ -130,46 +130,7 @@
             const formData = new FormData(form);
             const optionInputs = optionsContainer.querySelectorAll('.option-group input[type="text"]');
             const radioInputs = optionsContainer.querySelectorAll('.option-group input[type="radio"]');
-
-            // Validate at least 3 options
-            if (optionInputs.length < 3) {
-                alert("Kamida 3 ta variant kiritishingiz shart!");
-                return;
-            }
-
-            // Validate all options have text
-            let allOptionsValid = true;
-            optionInputs.forEach(input => {
-                if (!input.value.trim()) {
-                    allOptionsValid = false;
-                    input.style.borderColor = '#e74c3c';
-                } else {
-                    input.style.borderColor = '#e0e0e0';
-                }
-            });
-
-            if (!allOptionsValid) {
-                alert("Barcha variantlar to'ldirilishi shart!");
-                return;
-            }
-
-            // Validate question text
             const question = formData.get('quiz').trim();
-            if (!question) {
-                alert("Savol matni kiritilishi shart!");
-                return;
-            }
-
-            // Validate correct answer is selected
-            let correctAnswerSelected = false;
-            radioInputs.forEach(radio => {
-                if (radio.checked) correctAnswerSelected = true;
-            });
-
-            if (!correctAnswerSelected) {
-                alert("To'g'ri javobni belgilashingiz shart!");
-                return;
-            }
 
             // Prepare data
             const options = [];
