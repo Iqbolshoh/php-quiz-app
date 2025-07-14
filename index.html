@@ -85,6 +85,7 @@
         const editAddOptionButton = document.querySelector('#edit-add-option');
         const editQuizText = document.querySelector('#edit-quiz-text');
         const editQuizId = document.querySelector('#edit-quiz-id');
+        let questions = [];
 
         // Update option numbers and placeholders
         const updateOptionNumbers = (container) => {
@@ -154,6 +155,8 @@
                         return;
                     }
 
+                    questions = response;
+
                     response.forEach(quiz => {
                         const quizItem = document.createElement('div');
                         quizItem.className = 'quiz-item';
@@ -196,30 +199,23 @@
 
         // Open edit modal
         const openEditModal = (id) => {
-            fetch(`backend/quiz/edit.php?id=${id}`)
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to fetch quiz');
-                    return res.json();
-                })
-                .then(quiz => {
-                    if (!quiz || !quiz.id) {
-                        alert('Quiz not found!');
-                        return;
-                    }
+            const quiz = questions.find(q => q.id === id);
 
-                    editQuizId.value = quiz.id;
-                    editQuizText.value = quiz.quiz;
-                    editOptionsContainer.innerHTML = '';
+            if (!quiz || !quiz.id) {
+                alert('Quiz not found!');
+                return;
+            }
 
-                    quiz.options.forEach(option => {
-                        createOption(editOptionsContainer, option, option === quiz.answer);
-                    });
+            editQuizId.value = quiz.id;
+            editQuizText.value = quiz.quiz;
+            editOptionsContainer.innerHTML = '';
 
-                    editModal.style.display = 'flex';
-                })
-                .catch(err => {
-                    console.error('Error loading quiz:', err);
-                });
+            quiz.options.forEach(option => {
+                const isCorrect = option === quiz.answer;
+                createOption(editOptionsContainer, option, isCorrect);
+            });
+
+            editModal.style.display = 'flex';
         };
 
         // Close modal
@@ -330,7 +326,7 @@
 
             const updatedQuiz = { id, quiz: question, options, answer };
 
-            fetch('backend/quiz/update.php', {
+            fetch('backend/quiz/edit.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedQuiz)
