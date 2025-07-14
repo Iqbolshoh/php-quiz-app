@@ -4,7 +4,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($data['quiz']) || !isset($data['options']) || !isset($data['answer'])) {
+if (!isset($data['id']) || !isset($data['quiz']) || !isset($data['options']) || !isset($data['answer'])) {
     echo json_encode([
         'success' => false,
         'message' => 'Invalid input data'
@@ -12,14 +12,23 @@ if (!isset($data['quiz']) || !isset($data['options']) || !isset($data['answer'])
     exit;
 }
 
+$id = $data['id'];
 $quiz = $data['quiz'];
 $options = $data['options'];
 $answer = $data['answer'];
 
-if (empty($quiz) || empty($options) || empty($answer)) {
+if (empty($id) || empty($quiz) || empty($options) || empty($answer)) {
     echo json_encode([
         'success' => false,
         'message' => 'Quiz, options, and answer cannot be empty'
+    ]);
+    exit;
+}
+
+if (!is_numeric($id) || $id <= 0) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'ID must be a positive number'
     ]);
     exit;
 }
@@ -56,6 +65,7 @@ if (file_exists($file)) {
 }
 
 $allQuestion[] = [
+    'id' => $id,
     'quiz' => $quiz,
     'options' => $options,
     'answer' => $answer

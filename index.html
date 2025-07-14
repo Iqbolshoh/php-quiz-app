@@ -153,28 +153,32 @@
         const renderQuizItems = () => {
             quizItemsContainer.innerHTML = '';
 
-            if (quizzes.length === 0) {
-                quizItemsContainer.innerHTML = '<p>No questions added yet.</p>';
-                return;
-            }
+            fetch('backend/quiz/get.php')
+                .then(res => res.json())
+                .then(response => {
 
-            quizzes.forEach(quiz => {
-                const quizItem = document.createElement('div');
-                quizItem.className = 'quiz-item';
-                quizItem.dataset.id = quiz.id;
+                    if (response.length === 0) {
+                        quizItemsContainer.innerHTML = '<p>No questions added yet.</p>';
+                        return;
+                    }
 
-                let optionsHtml = '';
-                quiz.options.forEach(option => {
-                    const isCorrect = option === quiz.answer;
-                    optionsHtml += `
+                    response.forEach(quiz => {
+                        const quizItem = document.createElement('div');
+                        quizItem.className = 'quiz-item';
+                        quizItem.dataset.id = quiz.id;
+
+                        let optionsHtml = '';
+                        quiz.options.forEach(option => {
+                            const isCorrect = option === quiz.answer;
+                            optionsHtml += `
                         <div class="quiz-option ${isCorrect ? 'correct-option' : ''}">
                             ${option}
                             ${isCorrect ? '<i class="fas fa-check" style="margin-left: 5px;"></i>' : ''}
                         </div>
                     `;
-                });
+                        });
 
-                quizItem.innerHTML = `
+                        quizItem.innerHTML = `
                     <div class="quiz-question">${quiz.quiz}</div>
                     <div class="quiz-options">${optionsHtml}</div>
                     <div class="quiz-actions">
@@ -189,8 +193,12 @@
                     </div>
                 `;
 
-                quizItemsContainer.appendChild(quizItem);
-            });
+                        quizItemsContainer.appendChild(quizItem);
+                    });
+
+                }).catch(err => {
+                    console.error('Error fetching quizzes:', err);
+                });
 
             // Add event listeners to edit and delete buttons
             document.querySelectorAll('.edit-btn').forEach(btn => {
@@ -210,7 +218,7 @@
 
         // Function to open edit modal
         const openEditModal = (id) => {
-            const quiz = quizzes.find(q => q.id === id);
+            // const quiz = quizzes.find(q => q.id === id);
             if (!quiz) return;
 
             editQuizId.value = quiz.id;
@@ -233,7 +241,7 @@
         // Function to delete a quiz
         const deleteQuiz = (id) => {
             if (confirm('Are you sure you want to delete this question?')) {
-                quizzes = quizzes.filter(q => q.id !== id);
+                // quizzes = quizzes.filter(q => q.id !== id);
                 renderQuizItems();
                 alert('Question deleted successfully!');
             }
@@ -282,11 +290,22 @@
             const radioInputs = optionsContainer.querySelectorAll('.option-group input[type="radio"]');
             const question = formData.get('quiz').trim();
 
-            // Prepare data
             const options = [];
             let answer = '';
 
-            // Create new quiz
+            optionInputs.forEach((input, index) => {
+                const value = input.value.trim();
+                options.push(value);
+                if (radioInputs[index].checked) {
+                    answer = value;
+                }
+            });
+
+            if (!question || options.length < 2 || !answer) {
+                alert('Savol, kamida 2ta variant va 1ta to‘g‘ri javob tanlanishi kerak!');
+                return;
+            }
+
             const newQuiz = {
                 id: Date.now(),
                 quiz: question,
@@ -294,22 +313,34 @@
                 answer: answer
             };
 
-            quizzes.push(newQuiz);
-            renderQuizItems();
+            fetch('backend/quiz/add.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newQuiz)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // quizzes.push(newQuiz);
+                        renderQuizItems();
+                        alert('Savol muvaffaqiyatli qo‘shildi!');
+                    } else {
+                        alert('Xatolik: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    alert('Tarmoq xatosi: ' + err.message);
+                });
 
-            // Reset form
             form.reset();
             optionsContainer.innerHTML = '';
             createOption(optionsContainer, '');
             createOption(optionsContainer, '');
 
-            // Mark first option as correct by default
             const firstRadio = optionsContainer.querySelector('input[type="radio"]');
-            if (firstRadio) {
-                firstRadio.checked = true;
-            }
-
-            alert('Question added successfully!');
+            if (firstRadio) firstRadio.checked = true;
         });
 
         // Edit form submission handler
@@ -321,47 +352,14 @@
             const question = editQuizText.value.trim();
             const id = parseInt(editQuizId.value);
 
-            // Validate question
-            if (!question) {
-                alert('Please enter a question!');
-                return;
-            }
-
             // Prepare data
             const options = [];
             let answer = '';
 
-            optionInputs.forEach((input, index) => {
-                const optionText = input.value.trim();
-                if (!optionText) {
-                    alert('Please fill in all options!');
-                    return;
-                }
-                options.push(optionText);
-                if (radioInputs[index].checked) {
-                    answer = optionText;
-                }
-            });
 
-            if (!answer) {
-                alert('Please select the correct answer!');
-                return;
-            }
-
-            // Update quiz
-            const quizIndex = quizzes.findIndex(q => q.id === id);
-            if (quizIndex !== -1) {
-                quizzes[quizIndex] = {
-                    id: id,
-                    quiz: question,
-                    options: options,
-                    answer: answer
-                };
-
-                renderQuizItems();
-                closeModal();
-                alert('Question updated successfully!');
-            }
+            // renderQuizItems();
+            // closeModal();
+            // alert('Question updated successfully!');
         });
     </script>
 </body>
