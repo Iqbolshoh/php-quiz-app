@@ -4,19 +4,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Interactive Quiz</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/quiz.css">
 </head>
 
 <body>
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1><i class="fas fa-question-circle me-2"></i>Interactive Quiz</h1>
+            <div class="timer">
+                <i class="fas fa-clock me-2"></i><span id="time">00:00</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress">
+                    <div class="progress-bar" id="quiz-progress" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
 
-    <h1>Quiz</h1>
-    <form id="quiz-form">
-        <!-- Questions will be dynamically inserted here -->
-    </form>
+        <form id="quiz-form">
+            <!-- Questions will be dynamically inserted here -->
+        </form>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         let quizForm = document.querySelector('#quiz-form');
-        let questions = []
+        let questions = [];
+        let timeElapsed = 0;
+        let timerInterval;
+
+        // Timer function
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeElapsed = 0;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+            const seconds = (timeElapsed % 60).toString().padStart(2, '0');
+            document.getElementById('time').textContent = `${minutes}:${seconds}`;
+        }
 
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -27,57 +66,146 @@
         }
 
         function loadQuiz() {
-            quizForm.innerHTML = ''
+            startTimer();
+            quizForm.innerHTML = '';
+
             fetch('backend/quiz/get.php')
                 .then(res => res.json())
                 .then(response => {
-                    questions = shuffleArray(response)
-                    questions.forEach(question => {
+                    questions = shuffleArray(response);
+
+                    // Update progress bar
+                    document.getElementById('quiz-progress').style.width = '0%';
+
+                    questions.forEach((question, index) => {
                         const questionDiv = document.createElement('div');
+                        questionDiv.className = 'question-card';
                         questionDiv.innerHTML = `
-                        <h2>${question.quiz}</h2>
-                    `;
-                        let options = shuffleArray(question.options)
-                        options.forEach(option => {
-                            const optionLabel = document.createElement('label');
-                            optionLabel.innerHTML = `
-                            <input type="radio" name="${question.id}" value="${option}">
-                            ${option}
+                            <h2><span class="badge bg-primary me-2">${index + 1}</span>${question.quiz}</h2>
                         `;
-                            questionDiv.appendChild(optionLabel);
+
+                        let options = shuffleArray(question.options);
+                        options.forEach(option => {
+                            const optionDiv = document.createElement('div');
+                            optionDiv.className = 'option-label';
+
+                            const optionLabel = document.createElement('label');
+                            optionLabel.style.width = '100%';
+                            optionLabel.style.cursor = 'pointer';
+                            optionLabel.innerHTML = `
+                                <input type="radio" name="${question.id}" value="${option}" class="me-2">
+                                ${option}
+                            `;
+
+                            optionDiv.appendChild(optionLabel);
+                            questionDiv.appendChild(optionDiv);
                         });
+
                         quizForm.appendChild(questionDiv);
                     });
                 })
                 .finally(() => {
+                    const submitDiv = document.createElement('div');
+                    submitDiv.className = 'd-grid mt-4';
+
                     const submitButton = document.createElement('button');
-                    submitButton.textContent = 'Submit';
-                    quizForm.appendChild(submitButton);
+                    submitButton.className = 'submit-btn';
+                    submitButton.type = 'submit';
+                    submitButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Quiz';
+
+                    submitDiv.appendChild(submitButton);
+                    quizForm.appendChild(submitDiv);
                 });
+        }
+
+        function showResult(score, total) {
+            clearInterval(timerInterval);
+
+            const percentage = Math.round((score / total) * 100);
+            let message = '';
+            let emoji = '';
+
+            if (percentage >= 80) {
+                message = 'Excellent work! You really know your stuff.';
+                emoji = '🎉';
+            } else if (percentage >= 60) {
+                message = 'Good job! You passed the quiz.';
+                emoji = '👍';
+            } else {
+                message = 'Keep practicing! You can do better next time.';
+                emoji = '💪';
+            }
+
+            const resultModal = document.createElement('div');
+            resultModal.className = 'result-modal';
+            resultModal.innerHTML = `
+                <div class="result-content">
+                    <h2>Quiz Results ${emoji}</h2>
+                    <p>${message}</p>
+                    <div class="score-display">${score}/${total}</div>
+                    <p>That's ${percentage}% correct!</p>
+                    <p>Time taken: ${document.getElementById('time').textContent}</p>
+                    <button class="close-btn" onclick="this.closest('.result-modal').remove(); loadQuiz();">
+                        <i class="fas fa-redo me-2"></i>Try Again
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(resultModal);
         }
 
         loadQuiz();
 
         quizForm.addEventListener('submit', (e) => {
-            e.preventDefault()
+            e.preventDefault();
             let formData = new FormData(quizForm);
             let answers = {};
             formData.forEach((value, key) => {
                 answers[key] = value;
             });
 
-            let answersCount = 0
+            let answersCount = 0;
             questions.forEach(question => {
                 if (answers[question.id] === question.answer) {
                     answersCount++;
                 }
             });
 
-            alert(answersCount + '/' + questions.length)
-            quizForm.reset();
-            loadQuiz()
-        })
+            const percentage = Math.round((answersCount / questions.length) * 100)
 
+            let data = {
+                score: answersCount,
+                total: questions.length,
+                percentage: percentage,
+            }
+
+            fetch('backend/quiz/save-result.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success) {
+                        showResult(answersCount, questions.length);
+                    } else {
+                        alert('Error : ', response.message);
+                    }
+                });
+        });
+
+        // Update progress as user answers questions
+        quizForm.addEventListener('change', () => {
+            let answeredCount = 0;
+            questions.forEach(question => {
+                if (quizForm.elements[question.id].value) {
+                    answeredCount++;
+                }
+            });
+
+            const progress = (answeredCount / questions.length) * 100;
+            document.getElementById('quiz-progress').style.width = `${progress}%`;
+        });
     </script>
 </body>
 

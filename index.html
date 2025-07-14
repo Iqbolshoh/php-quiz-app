@@ -6,71 +6,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quiz Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/styles.css">
 </head>
 
 <body>
     <div class="container">
+        <!-- Navigation to Quiz Page -->
+        <div class="quiz-nav">
+            <a href="quiz.html" class="quiz-nav-link">
+                <i class="fas fa-play-circle"></i>
+                Start Quiz
+            </a>
+        </div>
+
         <h1>Quiz Management System</h1>
 
         <!-- Add Quiz Form -->
-        <div class="form-container">
-            <h2>Add New Question</h2>
-            <form id="add-quiz">
-                <textarea name="quiz" placeholder="Enter your question here..." rows="3" required></textarea>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Add New Question</h2>
+            </div>
+            <div class="card-body">
+                <form id="add-quiz">
+                    <div class="mb-4">
+                        <label for="quiz-text" class="form-label">Question</label>
+                        <textarea class="form-control" id="quiz-text" name="quiz"
+                            placeholder="Enter your question here..." rows="3" required></textarea>
+                    </div>
 
-                <div id="options-container">
-                    <!-- Options will be added here by JavaScript -->
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">Options</label>
+                        <div id="options-container">
+                            <!-- Options will be added here by JavaScript -->
+                        </div>
+                    </div>
 
-                <div class="controls">
-                    <button type="button" id="add-option">
-                        <i class="fas fa-plus"></i>
-                        Add Option
-                    </button>
-                    <button type="submit" id="submit-btn">
-                        <i class="fas fa-save"></i>
-                        Save Question
-                    </button>
-                </div>
-            </form>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <button type="button" id="add-option" class="btn btn-outline-secondary">
+                            <i class="fas fa-plus"></i>
+                            Add Option
+                        </button>
+                        <button type="submit" id="submit-btn" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save Question
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Quiz List -->
-        <div class="quiz-list">
-            <h2>Existing Questions</h2>
-            <div id="quiz-items-container">
-                <!-- Quiz items will be loaded here -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="h4 mb-0">Existing Questions</h2>
+                <span class="badge bg-primary rounded-pill" id="question-count">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div id="quiz-items-container" class="list-group list-group-flush">
+                    <!-- Quiz items will be loaded here -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Edit Modal -->
-    <div class="modal" id="edit-modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-edit-modal">&times;</span>
-            <h2>Edit Question</h2>
-            <form id="edit-quiz-form">
-                <input type="hidden" id="edit-quiz-id">
-                <textarea id="edit-quiz-text" placeholder="Edit question..." rows="3" required></textarea>
-
-                <div id="edit-options-container">
-                    <!-- Edit options will be added here -->
+    <div class="modal fade" id="edit-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5">Edit Question</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body">
+                    <form id="edit-quiz-form">
+                        <input type="hidden" id="edit-quiz-id">
+                        <div class="mb-4">
+                            <label for="edit-quiz-text" class="form-label">Question</label>
+                            <textarea class="form-control" id="edit-quiz-text" placeholder="Edit question..." rows="3"
+                                required></textarea>
+                        </div>
 
-                <div class="controls">
-                    <button type="button" id="edit-add-option">
-                        <i class="fas fa-plus"></i>
-                        Add Option
-                    </button>
-                    <button type="submit" id="update-btn">
-                        <i class="fas fa-sync-alt"></i>
-                        Update Question
-                    </button>
+                        <div class="mb-3">
+                            <label class="form-label">Options</label>
+                            <div id="edit-options-container">
+                                <!-- Edit options will be added here -->
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <button type="button" id="edit-add-option" class="btn btn-outline-secondary">
+                                <i class="fas fa-plus"></i>
+                                Add Option
+                            </button>
+                            <button type="submit" id="update-btn" class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i>
+                                Update Question
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // DOM Elements
@@ -78,8 +124,8 @@
         const optionsContainer = document.querySelector('#options-container');
         const addOptionButton = document.querySelector('#add-option');
         const quizItemsContainer = document.querySelector('#quiz-items-container');
-        const editModal = document.querySelector('#edit-modal');
-        const closeEditModal = document.querySelector('#close-edit-modal');
+        const questionCount = document.querySelector('#question-count');
+        const editModal = new bootstrap.Modal(document.getElementById('edit-modal'));
         const editForm = document.querySelector('#edit-quiz-form');
         const editOptionsContainer = document.querySelector('#edit-options-container');
         const editAddOptionButton = document.querySelector('#edit-add-option');
@@ -93,7 +139,7 @@
             optionGroups.forEach((group, index) => {
                 const input = group.querySelector('input[type="text"]');
                 const radio = group.querySelector('input[type="radio"]');
-                const label = group.querySelector('label');
+                const label = group.querySelector('.radio-label');
                 input.name = `option-${index + 1}`;
                 input.placeholder = `Option ${index + 1}...`;
                 radio.id = `${container === editOptionsContainer ? 'edit-' : ''}option-radio-${index}`;
@@ -110,18 +156,20 @@
             const radio = document.createElement('input');
             radio.type = 'radio';
             radio.name = container === editOptionsContainer ? 'edit-correct-option' : 'correct-option';
+            radio.className = 'd-none';
 
             const label = document.createElement('label');
             label.className = 'radio-label';
 
             const input = document.createElement('input');
             input.type = 'text';
+            input.className = 'form-control flex-grow-1';
             input.required = true;
             input.value = value;
 
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'remove-btn';
+            removeBtn.className = 'btn btn-sm btn-danger remove-btn';
             removeBtn.innerHTML = '<i class="fas fa-times"></i>';
             removeBtn.addEventListener('click', () => {
                 if (container.querySelectorAll('.option-group').length > 2) {
@@ -145,42 +193,49 @@
 
         // Render quizzes
         const renderQuizItems = () => {
-            quizItemsContainer.innerHTML = '';
+            quizItemsContainer.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
 
             fetch('backend/quiz/get.php')
                 .then(res => res.json())
                 .then(response => {
                     if (!Array.isArray(response) || response.length === 0) {
-                        quizItemsContainer.innerHTML = '<p>No questions added yet.</p>';
+                        quizItemsContainer.innerHTML = '<div class="text-center py-5 text-muted">No questions added yet.</div>';
+                        questionCount.textContent = '0';
                         return;
                     }
 
                     questions = response;
+                    questionCount.textContent = response.length;
+
+                    quizItemsContainer.innerHTML = '';
 
                     response.forEach(quiz => {
                         const quizItem = document.createElement('div');
-                        quizItem.className = 'quiz-item';
+                        quizItem.className = 'list-group-item quiz-item';
                         quizItem.dataset.id = quiz.id;
 
                         let optionsHtml = '';
                         quiz.options.forEach(option => {
                             const isCorrect = option === quiz.answer;
                             optionsHtml += `
-                        <div class="quiz-option ${isCorrect ? 'correct-option' : ''}">
-                            ${option}
-                            ${isCorrect ? '<i class="fas fa-check"></i>' : ''}
-                        </div>
-                    `;
+                                <div class="quiz-option ${isCorrect ? 'correct-option' : ''}">
+                                    ${option}
+                                </div>
+                            `;
                         });
 
                         quizItem.innerHTML = `
-                    <div class="quiz-question">${quiz.quiz}</div>
-                    <div class="quiz-options">${optionsHtml}</div>
-                    <div class="quiz-actions">
-                        <button class="edit-btn" data-id="${quiz.id}"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="delete-btn" data-id="${quiz.id}"><i class="fas fa-trash"></i> Delete</button>
-                    </div>
-                `;
+                            <div class="quiz-question">${quiz.quiz}</div>
+                            <div class="quiz-options">${optionsHtml}</div>
+                            <div class="quiz-actions mt-3">
+                                <button class="btn btn-warning edit-btn" data-id="${quiz.id}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-danger delete-btn" data-id="${quiz.id}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        `;
 
                         quizItemsContainer.appendChild(quizItem);
                     });
@@ -194,7 +249,10 @@
                         btn.addEventListener('click', () => deleteQuiz(parseInt(btn.dataset.id)));
                     });
                 })
-                .catch(err => console.error('Error loading quizzes:', err));
+                .catch(err => {
+                    console.error('Error loading quizzes:', err);
+                    quizItemsContainer.innerHTML = `<div class="alert alert-danger mx-3 my-3">Error loading questions. Please try again.</div>`;
+                });
         };
 
         // Open edit modal
@@ -215,19 +273,12 @@
                 createOption(editOptionsContainer, option, isCorrect);
             });
 
-            editModal.style.display = 'flex';
-        };
-
-        // Close modal
-        const closeModal = () => {
-            editModal.style.display = 'none';
-            editForm.reset();
-            editOptionsContainer.innerHTML = '';
+            editModal.show();
         };
 
         // Delete quiz
         const deleteQuiz = (id) => {
-            if (confirm('Delete this question?')) {
+            if (confirm('Are you sure you want to delete this question?')) {
                 fetch('backend/quiz/delete.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -238,11 +289,12 @@
                         if (data.success) {
                             renderQuizItems();
                         } else {
-                            alert('Error: ' + (data.message));
+                            alert('Error: ' + (data.message || 'Failed to delete question'));
                         }
                     })
                     .catch(err => {
                         console.error('Error deleting quiz:', err);
+                        alert('An error occurred while deleting the question');
                     });
             }
         };
@@ -271,6 +323,16 @@
                 }
             });
 
+            if (!hasCorrectAnswer) {
+                alert('Please select the correct answer!');
+                return;
+            }
+
+            if (options.length < 2) {
+                alert('Please add at least 2 options!');
+                return;
+            }
+
             const newQuiz = {
                 id: Date.now(),
                 quiz: question,
@@ -292,11 +354,12 @@
                         createOption(optionsContainer, '', true); // First option checked by default
                         createOption(optionsContainer);
                     } else {
-                        alert('Error: ' + (data.message));
+                        alert('Error: ' + (data.message || 'Failed to add question'));
                     }
                 })
                 .catch(err => {
                     console.error('Error adding quiz:', err);
+                    alert('An error occurred while adding the question');
                 });
         });
 
@@ -324,6 +387,16 @@
                 }
             });
 
+            if (!hasCorrectAnswer) {
+                alert('Please select the correct answer!');
+                return;
+            }
+
+            if (options.length < 2) {
+                alert('Please add at least 2 options!');
+                return;
+            }
+
             const updatedQuiz = { id, quiz: question, options, answer };
 
             fetch('backend/quiz/edit.php', {
@@ -334,24 +407,22 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        closeModal();
+                        editModal.hide();
                         renderQuizItems();
                     } else {
-                        alert('Error: ' + (data.message));
+                        alert('Error: ' + (data.message || 'Failed to update question'));
                     }
                 })
                 .catch(err => {
                     console.error('Error updating quiz:', err);
+                    alert('An error occurred while updating the question');
                 });
         });
 
         // Initialize
         addOptionButton.addEventListener('click', () => createOption(optionsContainer));
         editAddOptionButton.addEventListener('click', () => createOption(editOptionsContainer));
-        closeEditModal.addEventListener('click', closeModal);
-        window.addEventListener('click', (e) => {
-            if (e.target === editModal) closeModal();
-        });
+
         document.addEventListener('DOMContentLoaded', () => {
             createOption(optionsContainer, '', true); // First option checked by default
             createOption(optionsContainer);
