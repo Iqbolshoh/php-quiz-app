@@ -177,7 +177,8 @@
                 score: answersCount,
                 total: questions.length,
                 percentage: percentage,
-            }
+                time: timeElapsed
+            };
 
             fetch('backend/quiz/save-result.php', {
                 method: 'POST',

@@ -4,7 +4,12 @@ header('Content-Type: application/json; charset=utf-8');
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($data['score']) || !isset($data['total']) || !isset($data['percentage'])) {
+if (
+    !isset($data['score']) ||
+    !isset($data['total']) ||
+    !isset($data['percentage']) ||
+    !isset($data['time'])
+) {
     echo json_encode([
         'success' => false,
         'message' => 'Invalid input data'
@@ -15,8 +20,14 @@ if (!isset($data['score']) || !isset($data['total']) || !isset($data['percentage
 $score = $data['score'];
 $total = $data['total'];
 $percentage = $data['percentage'];
+$time = $data['time'];
 
-if (empty($score) || empty($total) || empty($percentage)) {
+if (
+    empty($score) ||
+    empty($total) ||
+    empty($percentage) ||
+    empty($time)
+) {
     echo json_encode([
         'success' => false,
         'message' => 'Score, total, and percentage cannot be empty'
@@ -48,6 +59,14 @@ if (!is_numeric($percentage) || $percentage < 0 || $percentage > 100) {
     exit;
 }
 
+if (!is_numeric($time) || $time < 0) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Time must be a non-negative number'
+    ]);
+    exit;
+}
+
 $file = '../data/quiz_result.json';
 $allResults = [];
 
@@ -59,6 +78,7 @@ $result = [
     'score' => $score,
     'total' => $total,
     'percentage' => $percentage,
+    'time' => $time,
     'timestamp' => date('Y-m-d H:i:s')
 ];
 
