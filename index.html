@@ -92,9 +92,12 @@
             optionGroups.forEach((group, index) => {
                 const input = group.querySelector('input[type="text"]');
                 const radio = group.querySelector('input[type="radio"]');
+                const label = group.querySelector('label');
                 input.name = `option-${index + 1}`;
                 input.placeholder = `Option ${index + 1}...`;
+                radio.id = `${container === editOptionsContainer ? 'edit-' : ''}option-radio-${index}`;
                 radio.value = index;
+                label.setAttribute('for', radio.id);
             });
         };
 
@@ -106,10 +109,9 @@
             const radio = document.createElement('input');
             radio.type = 'radio';
             radio.name = container === editOptionsContainer ? 'edit-correct-option' : 'correct-option';
-            if (isCorrect) radio.checked = true;
 
-            const radioLabel = document.createElement('span');
-            radioLabel.className = 'radio-label';
+            const label = document.createElement('label');
+            label.className = 'radio-label';
 
             const input = document.createElement('input');
             input.type = 'text';
@@ -129,8 +131,10 @@
                 }
             });
 
+            if (isCorrect) radio.checked = true;
+
             optionGroup.appendChild(radio);
-            optionGroup.appendChild(radioLabel);
+            optionGroup.appendChild(label);
             optionGroup.appendChild(input);
             optionGroup.appendChild(removeBtn);
             container.appendChild(optionGroup);
@@ -178,19 +182,13 @@
                         quizItemsContainer.appendChild(quizItem);
                     });
 
-                    // Bind edit and delete after rendering
+                    // Bind edit and delete buttons
                     document.querySelectorAll('.edit-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const id = parseInt(btn.dataset.id);
-                            openEditModal(id);
-                        });
+                        btn.addEventListener('click', () => openEditModal(parseInt(btn.dataset.id)));
                     });
 
                     document.querySelectorAll('.delete-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const id = parseInt(btn.dataset.id);
-                            deleteQuiz(id);
-                        });
+                        btn.addEventListener('click', () => deleteQuiz(parseInt(btn.dataset.id)));
                     });
                 })
                 .catch(err => console.error('Error loading quizzes:', err));
@@ -198,10 +196,16 @@
 
         // Open edit modal
         const openEditModal = (id) => {
-            fetch(`backend/quiz/get-one.php?id=${id}`)
-                .then(res => res.json())
+            fetch(`backend/quiz/edit.php?id=${id}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to fetch quiz');
+                    return res.json();
+                })
                 .then(quiz => {
-                    if (!quiz) return;
+                    if (!quiz || !quiz.id) {
+                        alert('Quiz not found!');
+                        return;
+                    }
 
                     editQuizId.value = quiz.id;
                     editQuizText.value = quiz.quiz;
@@ -213,11 +217,16 @@
 
                     editModal.style.display = 'flex';
                 })
-                .catch(err => console.error('Error loading quiz:', err));
+                .catch(err => {
+                    console.error('Error loading quiz:', err);
+                });
         };
 
+        // Close modal
         const closeModal = () => {
             editModal.style.display = 'none';
+            editForm.reset();
+            editOptionsContainer.innerHTML = '';
         };
 
         // Delete quiz
@@ -232,10 +241,12 @@
                     .then(data => {
                         if (data.success) {
                             renderQuizItems();
-                            alert('Question deleted!');
                         } else {
-                            alert('Error deleting question.');
+                            alert('Error: ' + (data.message));
                         }
+                    })
+                    .catch(err => {
+                        console.error('Error deleting quiz:', err);
                     });
             }
         };
@@ -251,19 +262,18 @@
 
             const options = [];
             let answer = '';
+            let hasCorrectAnswer = false;
 
             optionInputs.forEach((input, index) => {
                 const value = input.value.trim();
-                options.push(value);
-                if (radioInputs[index].checked) {
-                    answer = value;
+                if (value) {
+                    options.push(value);
+                    if (radioInputs[index].checked) {
+                        answer = value;
+                        hasCorrectAnswer = true;
+                    }
                 }
             });
-
-            if (!question || options.length < 2 || !answer) {
-                alert('Savol, kamida 2ta variant va 1ta to‘g‘ri javob tanlanishi kerak!');
-                return;
-            }
 
             const newQuiz = {
                 id: Date.now(),
@@ -274,55 +284,49 @@
 
             fetch('backend/quiz/add.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newQuiz)
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         renderQuizItems();
-                        alert('Savol muvaffaqiyatli qo‘shildi!');
+                        form.reset();
+                        optionsContainer.innerHTML = '';
+                        createOption(optionsContainer, '', true); // First option checked by default
+                        createOption(optionsContainer);
                     } else {
-                        alert('Xatolik: ' + data.message);
+                        alert('Error: ' + (data.message));
                     }
                 })
                 .catch(err => {
-                    alert('Tarmoq xatosi: ' + err.message);
+                    console.error('Error adding quiz:', err);
                 });
-
-            form.reset();
-            optionsContainer.innerHTML = '';
-            createOption(optionsContainer, '');
-            createOption(optionsContainer, '');
-
-            const firstRadio = optionsContainer.querySelector('input[type="radio"]');
-            if (firstRadio) firstRadio.checked = true;
         });
 
         // Update existing quiz
         editForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const id = editQuizId.value;
+            const id = parseInt(editQuizId.value);
             const question = editQuizText.value.trim();
             const optionInputs = editOptionsContainer.querySelectorAll('.option-group input[type="text"]');
             const radioInputs = editOptionsContainer.querySelectorAll('.option-group input[type="radio"]');
 
             const options = [];
             let answer = '';
+            let hasCorrectAnswer = false;
 
-            optionInputs.forEach((input, i) => {
-                const val = input.value.trim();
-                options.push(val);
-                if (radioInputs[i].checked) answer = val;
+            optionInputs.forEach((input, index) => {
+                const value = input.value.trim();
+                if (value) {
+                    options.push(value);
+                    if (radioInputs[index].checked) {
+                        answer = value;
+                        hasCorrectAnswer = true;
+                    }
+                }
             });
-
-            if (!question || options.length < 2 || !answer) {
-                alert('Fill all fields and select correct answer.');
-                return;
-            }
 
             const updatedQuiz = { id, quiz: question, options, answer };
 
@@ -336,14 +340,16 @@
                     if (data.success) {
                         closeModal();
                         renderQuizItems();
-                        alert('Question updated!');
                     } else {
-                        alert('Update failed.');
+                        alert('Error: ' + (data.message));
                     }
+                })
+                .catch(err => {
+                    console.error('Error updating quiz:', err);
                 });
         });
 
-        // Init
+        // Initialize
         addOptionButton.addEventListener('click', () => createOption(optionsContainer));
         editAddOptionButton.addEventListener('click', () => createOption(editOptionsContainer));
         closeEditModal.addEventListener('click', closeModal);
@@ -351,7 +357,7 @@
             if (e.target === editModal) closeModal();
         });
         document.addEventListener('DOMContentLoaded', () => {
-            createOption(optionsContainer);
+            createOption(optionsContainer, '', true); // First option checked by default
             createOption(optionsContainer);
             renderQuizItems();
         });
