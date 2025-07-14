@@ -174,37 +174,42 @@
             // Prepare data
             const options = [];
             let answer = '';
-            let answerIndex = -1;
 
             optionInputs.forEach((input, index) => {
                 options.push(input.value.trim());
                 if (radioInputs[index].checked) {
                     answer = input.value.trim();
-                    answerIndex = index;
                 }
             });
 
             const data = {
                 quiz: question,
                 options: options,
-                answer: answer,
-                answerIndex: answerIndex
+                answer: answer
             };
 
-            // Here you would typically send data to server
-            console.log('Yuborilayotgan maʼlumot:', data);
+            console.log(data);
 
-            // Show success message with formatted output
-            const formattedData = `Savol: ${data.quiz}\n\nVariantlar:\n${data.options.map((opt, i) => `${i === data.answerIndex ? '✓' : ' '} ${i + 1}. ${opt}`).join('\n')}`;
-
-            alert('Savol muvaffaqiyatli qo\'shildi!\n\n' + formattedData);
-
-            // Reset form but keep 3 default options
-            form.reset();
-            optionsContainer.innerHTML = '';
-            createOption('');
-            createOption('');
-            createOption('');
+            fetch('backend/quiz/add.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success) {
+                        alert(response.message);
+                        form.reset();
+                        optionsContainer.innerHTML = '';
+                        createOption('');
+                        createOption('');
+                        createOption('');
+                    } else {
+                        alert("Xatolik yuz berdi: " + response.message);
+                    }
+                })
 
             // Mark first option as correct by default
             const firstRadio = optionsContainer.querySelector('input[type="radio"]');
