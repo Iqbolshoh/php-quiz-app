@@ -4,57 +4,104 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Add Quiz</title>
+    <title>Quiz Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <body>
+    <div class="container">
+        <h1>Quiz Management System</h1>
 
-    <form id="add-quiz">
-        <h1>Yangi Savol Qo'shish</h1>
+        <!-- Add Quiz Form -->
+        <div class="form-container">
+            <h2>Add New Question</h2>
+            <form id="add-quiz">
+                <textarea name="quiz" placeholder="Enter your question here..." rows="3" required></textarea>
 
-        <textarea name="quiz" placeholder="Savol matnini kiriting..." rows="3" required></textarea>
+                <div id="options-container">
+                    <!-- Options will be added here by JavaScript -->
+                </div>
 
-        <div id="options-container">
-            <!-- Default options will be added here by JavaScript -->
+                <div class="controls">
+                    <button type="button" id="add-option">
+                        <i class="fas fa-plus"></i>
+                        Add Option
+                    </button>
+                    <button type="submit" id="submit-btn">
+                        <i class="fas fa-save"></i>
+                        Save Question
+                    </button>
+                </div>
+            </form>
         </div>
 
-        <div class="controls">
-            <button type="button" id="add-option">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Yangi Variant
-            </button>
-            <button type="submit" id="submit-btn">
-                Qo'shish
-            </button>
+        <!-- Quiz List -->
+        <div class="quiz-list">
+            <h2>Existing Questions</h2>
+            <div id="quiz-items-container">
+                <!-- Quiz items will be loaded here -->
+            </div>
         </div>
-    </form>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-edit-modal">&times;</span>
+            <h2>Edit Question</h2>
+            <form id="edit-quiz-form">
+                <input type="hidden" id="edit-quiz-id">
+                <textarea id="edit-quiz-text" placeholder="Edit question..." rows="3" required></textarea>
+
+                <div id="edit-options-container">
+                    <!-- Edit options will be added here -->
+                </div>
+
+                <div class="controls">
+                    <button type="button" id="edit-add-option">
+                        <i class="fas fa-plus"></i>
+                        Add Option
+                    </button>
+                    <button type="submit" id="update-btn">
+                        <i class="fas fa-sync-alt"></i>
+                        Update Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
+        // DOM Elements
         const form = document.querySelector('#add-quiz');
         const optionsContainer = document.querySelector('#options-container');
         const addOptionButton = document.querySelector('#add-option');
+        const quizItemsContainer = document.querySelector('#quiz-items-container');
+        const editModal = document.querySelector('#edit-modal');
+        const closeEditModal = document.querySelector('#close-edit-modal');
+        const editForm = document.querySelector('#edit-quiz-form');
+        const editOptionsContainer = document.querySelector('#edit-options-container');
+        const editAddOptionButton = document.querySelector('#edit-add-option');
+        const editQuizText = document.querySelector('#edit-quiz-text');
+        const editQuizId = document.querySelector('#edit-quiz-id');
 
         // Function to update option numbers and labels
-        const updateOptionNumbers = () => {
-            const optionGroups = optionsContainer.querySelectorAll('.option-group');
+        const updateOptionNumbers = (container) => {
+            const optionGroups = container.querySelectorAll('.option-group');
             optionGroups.forEach((group, index) => {
                 const input = group.querySelector('input[type="text"]');
                 const radio = group.querySelector('input[type="radio"]');
                 const label = group.querySelector('.radio-label');
 
                 input.name = `option-${index + 1}`;
-                input.placeholder = `Variant ${index + 1}...`;
+                input.placeholder = `Option ${index + 1}...`;
                 radio.value = index;
             });
         };
 
         // Function to create a new option element
-        const createOption = (value = '') => {
+        const createOption = (container, value = '', isCorrect = false) => {
             const optionGroup = document.createElement('div');
             optionGroup.className = 'option-group';
 
@@ -63,6 +110,7 @@
             radio.type = 'radio';
             radio.name = 'correct-option';
             radio.style.cursor = 'pointer';
+            if (isCorrect) radio.checked = true;
 
             // Label for radio button
             const radioLabel = document.createElement('span');
@@ -77,21 +125,17 @@
             // Remove button
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.title = "O'chirish";
-            removeBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            `;
+            removeBtn.className = 'remove-btn';
+            removeBtn.title = "Delete";
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
 
             removeBtn.addEventListener('click', () => {
-                // Don't allow removing if there are only 3 options
-                if (optionsContainer.querySelectorAll('.option-group').length > 2) {
+                // Don't allow removing if there are only 2 options
+                if (container.querySelectorAll('.option-group').length > 2) {
                     optionGroup.remove();
-                    updateOptionNumbers();
+                    updateOptionNumbers(container);
                 } else {
-                    alert("Kamida 2 ta variant bo'lishi shart!");
+                    alert("You must have at least 2 options!");
                 }
             });
 
@@ -100,30 +144,136 @@
             optionGroup.appendChild(radioLabel);
             optionGroup.appendChild(input);
             optionGroup.appendChild(removeBtn);
-            optionsContainer.appendChild(optionGroup);
+            container.appendChild(optionGroup);
 
-            updateOptionNumbers();
+            updateOptionNumbers(container);
         };
 
-        // Add initial 3 options when page loads
+        // Function to render quiz items
+        const renderQuizItems = () => {
+            quizItemsContainer.innerHTML = '';
+
+            if (quizzes.length === 0) {
+                quizItemsContainer.innerHTML = '<p>No questions added yet.</p>';
+                return;
+            }
+
+            quizzes.forEach(quiz => {
+                const quizItem = document.createElement('div');
+                quizItem.className = 'quiz-item';
+                quizItem.dataset.id = quiz.id;
+
+                let optionsHtml = '';
+                quiz.options.forEach(option => {
+                    const isCorrect = option === quiz.answer;
+                    optionsHtml += `
+                        <div class="quiz-option ${isCorrect ? 'correct-option' : ''}">
+                            ${option}
+                            ${isCorrect ? '<i class="fas fa-check" style="margin-left: 5px;"></i>' : ''}
+                        </div>
+                    `;
+                });
+
+                quizItem.innerHTML = `
+                    <div class="quiz-question">${quiz.quiz}</div>
+                    <div class="quiz-options">${optionsHtml}</div>
+                    <div class="quiz-actions">
+                        <button class="edit-btn" data-id="${quiz.id}">
+                            <i class="fas fa-edit"></i>
+                            Edit
+                        </button>
+                        <button class="delete-btn" data-id="${quiz.id}">
+                            <i class="fas fa-trash"></i>
+                            Delete
+                        </button>
+                    </div>
+                `;
+
+                quizItemsContainer.appendChild(quizItem);
+            });
+
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.closest('button').dataset.id);
+                    openEditModal(id);
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.closest('button').dataset.id);
+                    deleteQuiz(id);
+                });
+            });
+        };
+
+        // Function to open edit modal
+        const openEditModal = (id) => {
+            const quiz = quizzes.find(q => q.id === id);
+            if (!quiz) return;
+
+            editQuizId.value = quiz.id;
+            editQuizText.value = quiz.quiz;
+            editOptionsContainer.innerHTML = '';
+
+            // Add options to edit form
+            quiz.options.forEach(option => {
+                createOption(editOptionsContainer, option, option === quiz.answer);
+            });
+
+            editModal.style.display = 'flex';
+        };
+
+        // Function to close edit modal
+        const closeModal = () => {
+            editModal.style.display = 'none';
+        };
+
+        // Function to delete a quiz
+        const deleteQuiz = (id) => {
+            if (confirm('Are you sure you want to delete this question?')) {
+                quizzes = quizzes.filter(q => q.id !== id);
+                renderQuizItems();
+                alert('Question deleted successfully!');
+            }
+        };
+
+        // Add initial options when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            createOption('');
-            createOption('');
-            createOption('');
+            createOption(optionsContainer, '');
+            createOption(optionsContainer, '');
 
             // Mark first option as correct by default
             const firstRadio = optionsContainer.querySelector('input[type="radio"]');
             if (firstRadio) {
                 firstRadio.checked = true;
             }
+
+            renderQuizItems();
         });
 
         // Add new option when button is clicked
         addOptionButton.addEventListener('click', () => {
-            createOption('');
+            createOption(optionsContainer, '');
         });
 
-        // Form submission handler
+        // Add new option in edit form
+        editAddOptionButton.addEventListener('click', () => {
+            createOption(editOptionsContainer, '');
+        });
+
+        // Close modal when X is clicked
+        closeEditModal.addEventListener('click', closeModal);
+
+        // Close modal when clicking outside
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                closeModal();
+            }
+        });
+
+        // Form submission handler for new quiz
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -136,50 +286,84 @@
             const options = [];
             let answer = '';
 
-            optionInputs.forEach((input, index) => {
-                options.push(input.value.trim());
-                if (radioInputs[index].checked) {
-                    answer = input.value.trim();
-                }
-            });
-
-            const data = {
+            // Create new quiz
+            const newQuiz = {
+                id: Date.now(),
                 quiz: question,
                 options: options,
                 answer: answer
             };
 
-            console.log(data);
+            quizzes.push(newQuiz);
+            renderQuizItems();
 
-            fetch('backend/quiz/add.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-                .then(res => res.json())
-                .then(response => {
-                    if (response.success) {
-                        alert(response.message);
-                        form.reset();
-                        optionsContainer.innerHTML = '';
-                        createOption('');
-                        createOption('');
-                        createOption('');
-                    } else {
-                        alert("Xatolik yuz berdi: " + response.message);
-                    }
-                })
+            // Reset form
+            form.reset();
+            optionsContainer.innerHTML = '';
+            createOption(optionsContainer, '');
+            createOption(optionsContainer, '');
 
             // Mark first option as correct by default
             const firstRadio = optionsContainer.querySelector('input[type="radio"]');
             if (firstRadio) {
                 firstRadio.checked = true;
             }
+
+            alert('Question added successfully!');
+        });
+
+        // Edit form submission handler
+        editForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const optionInputs = editOptionsContainer.querySelectorAll('.option-group input[type="text"]');
+            const radioInputs = editOptionsContainer.querySelectorAll('.option-group input[type="radio"]');
+            const question = editQuizText.value.trim();
+            const id = parseInt(editQuizId.value);
+
+            // Validate question
+            if (!question) {
+                alert('Please enter a question!');
+                return;
+            }
+
+            // Prepare data
+            const options = [];
+            let answer = '';
+
+            optionInputs.forEach((input, index) => {
+                const optionText = input.value.trim();
+                if (!optionText) {
+                    alert('Please fill in all options!');
+                    return;
+                }
+                options.push(optionText);
+                if (radioInputs[index].checked) {
+                    answer = optionText;
+                }
+            });
+
+            if (!answer) {
+                alert('Please select the correct answer!');
+                return;
+            }
+
+            // Update quiz
+            const quizIndex = quizzes.findIndex(q => q.id === id);
+            if (quizIndex !== -1) {
+                quizzes[quizIndex] = {
+                    id: id,
+                    quiz: question,
+                    options: options,
+                    answer: answer
+                };
+
+                renderQuizItems();
+                closeModal();
+                alert('Question updated successfully!');
+            }
         });
     </script>
-
 </body>
 
 </html>
